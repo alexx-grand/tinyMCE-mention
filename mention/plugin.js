@@ -381,17 +381,29 @@
             // If the delimiter is a string value convert it to an array. (backwards compatibility)
             autoCompleteData.delimiter = (autoCompleteData.delimiter !== undefined) ? !$.isArray(autoCompleteData.delimiter) ? [autoCompleteData.delimiter] : autoCompleteData.delimiter : ['@'];
 
-            function prevCharIsSpace() {
+            function matchPrevChar() {
                 var start = ed.selection.getRng(true).startOffset,
-                      text = ed.selection.getRng(true).startContainer.data || '',
-                      charachter = text.substr(start > 0 ? start - 1 : 0, 1);
+                    text = ed.selection.getRng(true).startContainer.data || '';
 
-                return (!!$.trim(charachter).length) ? false : true;
+                if (start === 0 || text === '') {
+                    return true;
+                }
+
+                var charachter = text.substr(start - 1, 1);
+                var renderIfPrevChar = autoCompleteData.renderIfPrevChar;
+
+                if (renderIfPrevChar instanceof RegExp) {
+                    return renderIfPrevChar.test(charachter);
+                } else if (typeof renderIfPrevChar === 'string') {
+                    return renderIfPrevChar === charachter;
+                } else {
+                    return (!!$.trim(charachter).length) ? false : true;
+                }
             }
 
             ed.on('keypress', function (e) {
                 var delimiterIndex = $.inArray(String.fromCharCode(e.which || e.keyCode), autoCompleteData.delimiter);
-                if (delimiterIndex > -1 && prevCharIsSpace()) {
+                if (delimiterIndex > -1 && matchPrevChar()) {
                     if (autoComplete === undefined || (autoComplete.hasFocus !== undefined && !autoComplete.hasFocus)) {
                         e.preventDefault();
                         // Clone options object and set the used delimiter.
